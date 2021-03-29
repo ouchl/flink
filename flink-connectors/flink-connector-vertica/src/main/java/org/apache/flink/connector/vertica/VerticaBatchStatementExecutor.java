@@ -16,33 +16,34 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect;
+package org.apache.flink.connector.vertica;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import org.apache.flink.annotation.Internal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.function.Function;
 
 /**
- * Default JDBC dialects.
+ * Executes the given JDBC statement in batch for the accumulated records.
  */
-public final class JdbcDialects {
-
-	private static final List<JdbcDialect> DIALECTS = Arrays.asList(
-		new DerbyDialect(),
-		new MySQLDialect(),
-		new PostgresDialect(),
-		new VerticaDialect()
-	);
+@Internal
+public interface VerticaBatchStatementExecutor<T> {
 
 	/**
-	 * Fetch the JdbcDialect class corresponding to a given database url.
+	 * Create statements from connection.
 	 */
-	public static Optional<JdbcDialect> get(String url) {
-		for (JdbcDialect dialect : DIALECTS) {
-			if (dialect.canHandle(url)) {
-				return Optional.of(dialect);
-			}
-		}
-		return Optional.empty();
-	}
+	void prepareStatements(Connection connection) throws SQLException;
+
+	void addToBatch(T record) throws SQLException;
+
+	/**
+	 * Submits a batch of commands to the database for execution.
+	 */
+	void executeBatch() throws SQLException;
+
+	/**
+	 * Close JDBC related statements.
+	 */
+	void closeStatements() throws SQLException;
+
 }

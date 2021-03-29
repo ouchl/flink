@@ -16,33 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect;
+package org.apache.flink.connector.vertica;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
+import org.apache.flink.annotation.Internal;
 /**
- * Default JDBC dialects.
+ * Executes the given JDBC statement in batch for the accumulated records.
  */
-public final class JdbcDialects {
+@Internal
+public interface VerticaBufferedBatchStatementExecutor<T> extends VerticaBatchStatementExecutor<T> {
 
-	private static final List<JdbcDialect> DIALECTS = Arrays.asList(
-		new DerbyDialect(),
-		new MySQLDialect(),
-		new PostgresDialect(),
-		new VerticaDialect()
-	);
+	int getBufferSize();
 
-	/**
-	 * Fetch the JdbcDialect class corresponding to a given database url.
-	 */
-	public static Optional<JdbcDialect> get(String url) {
-		for (JdbcDialect dialect : DIALECTS) {
-			if (dialect.canHandle(url)) {
-				return Optional.of(dialect);
-			}
-		}
-		return Optional.empty();
-	}
 }
