@@ -91,7 +91,7 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 			return new VerticaBatchingOutputFormat<>(
 				new VerticaConnectionProvider(verticaOptions),
 				executionOptions,
-				ctx -> createBufferReduceExecutor(dmlOptions, ctx, rowDataTypeInformation, logicalTypes),
+				ctx -> createBufferReduceExecutor(dmlOptions, ctx, rowDataTypeInformation, logicalTypes, executionOptions.getIgnoreDelete()),
 				VerticaBatchingOutputFormat.RecordExtractor.identity());
 		} else {
 			// append only query
@@ -113,7 +113,8 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 			VerticaDmlOptions opt,
 			RuntimeContext ctx,
 			TypeInformation<RowData> rowDataTypeInfo,
-			LogicalType[] fieldTypes) {
+			LogicalType[] fieldTypes,
+			boolean ignoreDelete) {
 		checkArgument(opt.getKeyFields().isPresent());
 		String tableName = opt.getTableName();
 		String[] pkNames = opt.getKeyFields().get();
@@ -124,9 +125,10 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 
 		return new TableBufferReducedStatementExecutor(
 			createMergeExecutor(opt, fieldTypes),
-			createDeleteExecutor(tableName, pkNames, pkTypes),
+			createDeleteExecutor(opt, pkTypes),
 			createRowKeyExtractor(fieldTypes, pkFields),
-			valueTransform);
+			valueTransform,
+			ignoreDelete);
 	}
 
 	private static VerticaBufferedBatchStatementExecutor<RowData> createSimpleBufferedExecutor(
@@ -163,11 +165,10 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 		);
 	}
 	private static VerticaBatchStatementExecutor<RowData> createDeleteExecutor(
-		String tableName,
-		String[] pkNames,
+		VerticaDmlOptions dmlOptions,
 		LogicalType[] pkTypes) {
-		String deleteSql = VerticaStatements.getDeleteStatement(tableName, pkNames);
-		return createSimpleRowExecutor(pkNames, pkTypes, deleteSql);
+		final VerticaRowConverter rowConverter = new VerticaRowConverter(RowType.of(pkTypes));
+		return new TableDeleteStatementExecutor(dmlOptions, rowConverter);
 	}
 
 	private static Function<RowData, RowData> createRowKeyExtractor(LogicalType[] logicalTypes, int[] pkFields) {

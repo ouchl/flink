@@ -38,6 +38,7 @@ public final class TableBufferReducedStatementExecutor implements VerticaBuffere
 
 	private final VerticaBatchStatementExecutor<RowData> mergeExecutor;
 	private final VerticaBatchStatementExecutor<RowData> deleteExecutor;
+	private final boolean ignoreDelete;
 	private final Function<RowData, RowData> keyExtractor;
 	private final Function<RowData, RowData> valueTransform;
 	// the mapping is [KEY, <+/-, VALUE>]
@@ -47,11 +48,13 @@ public final class TableBufferReducedStatementExecutor implements VerticaBuffere
 			VerticaBatchStatementExecutor<RowData> mergeExecutor,
 			VerticaBatchStatementExecutor<RowData> deleteExecutor,
 			Function<RowData, RowData> keyExtractor,
-			Function<RowData, RowData> valueTransform) {
+			Function<RowData, RowData> valueTransform,
+			boolean ignoreDelete) {
 		this.mergeExecutor = mergeExecutor;
 		this.deleteExecutor = deleteExecutor;
 		this.keyExtractor = keyExtractor;
 		this.valueTransform = valueTransform;
+		this.ignoreDelete = ignoreDelete;
 	}
 
 	@Override
@@ -103,7 +106,9 @@ public final class TableBufferReducedStatementExecutor implements VerticaBuffere
 			}
 		}
 		mergeExecutor.executeBatch();
-		deleteExecutor.executeBatch();
+		if (!ignoreDelete) {
+			deleteExecutor.executeBatch();
+		}
 		reduceBuffer.clear();
 	}
 

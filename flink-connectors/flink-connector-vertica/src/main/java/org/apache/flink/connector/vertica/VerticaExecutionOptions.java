@@ -31,12 +31,19 @@ public class VerticaExecutionOptions implements Serializable {
 	public static final int DEFAULT_MAX_RETRY_TIMES = 3;
 	private static final int DEFAULT_INTERVAL_MILLIS = 0;
 	public static final int DEFAULT_SIZE = 5000;
+	public static final boolean DEFAULT_IGNORE_DELETE = false;
 
 	private final long batchIntervalMs;
 	private final int batchSize;
 	private final int maxRetries;
+	private final boolean ignoreDelete;
 
-	private VerticaExecutionOptions(long batchIntervalMs, int batchSize, int maxRetries) {
+	private VerticaExecutionOptions(
+		long batchIntervalMs,
+		int batchSize,
+		int maxRetries,
+		boolean ignoreDelete) {
+		this.ignoreDelete = ignoreDelete;
 		Preconditions.checkArgument(maxRetries >= 0);
 		this.batchIntervalMs = batchIntervalMs;
 		this.batchSize = batchSize;
@@ -53,6 +60,10 @@ public class VerticaExecutionOptions implements Serializable {
 
 	public int getMaxRetries() {
 		return maxRetries;
+	}
+
+	public boolean getIgnoreDelete() {
+		return ignoreDelete;
 	}
 
 	@Override
@@ -89,6 +100,7 @@ public class VerticaExecutionOptions implements Serializable {
 		private long intervalMs = DEFAULT_INTERVAL_MILLIS;
 		private int size = DEFAULT_SIZE;
 		private int maxRetries = DEFAULT_MAX_RETRY_TIMES;
+		private boolean ignoreDelete = DEFAULT_IGNORE_DELETE;
 
 		public Builder withBatchSize(int size) {
 			this.size = size;
@@ -105,8 +117,13 @@ public class VerticaExecutionOptions implements Serializable {
 			return this;
 		}
 
+		public Builder withIgnoreDelete(boolean ignoreDelete) {
+			this.ignoreDelete = ignoreDelete;
+			return this;
+		}
+
 		public VerticaExecutionOptions build() {
-			return new VerticaExecutionOptions(intervalMs, size, maxRetries);
+			return new VerticaExecutionOptions(intervalMs, size, maxRetries, ignoreDelete);
 		}
 	}
 }

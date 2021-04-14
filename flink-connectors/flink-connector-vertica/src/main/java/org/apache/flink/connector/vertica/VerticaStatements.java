@@ -44,7 +44,7 @@ public class VerticaStatements {
 		String onClause = Arrays.stream(pkFields)
 			.map(f -> format("tgt.%s = tmp.%s", quoteIdentifier(f), quoteIdentifier(f)))
 			.collect(Collectors.joining(" AND "));
-		String setClause = Arrays.stream(pkFields)
+		String setClause = Arrays.stream(fieldNames)
 			.map(f -> format("%s = tmp.%s", quoteIdentifier(f), quoteIdentifier(f)))
 			.collect(Collectors.joining(", "));
 		String insertColumns = Arrays.stream(fieldNames)
@@ -57,7 +57,12 @@ public class VerticaStatements {
 			+ "ON ("+onClause+") WHEN MATCHED THEN UPDATE SET "+setClause+" WHEN NOT MATCHED THEN INSERT "
 			+ "("+ insertColumns +") VALUES ("+valuesClause+")";
 	}
-
+	public static String getDeleteStatement(String tableName, String tempTable, String[] pkFields) {
+		String whereClause = "WHERE "+Arrays.stream(pkFields).map(f -> "t."+f+"="+"tmp."+f).collect(
+			Collectors.joining(" AND "));
+		return "DELETE FROM "+quoteIdentifier(tableName)+ " t WHERE EXISTS (SELECT 1 FROM "+quoteIdentifier(tempTable)+" tmp "
+			+ whereClause+ ")";
+	}
 	public static String getTruncateStatement(String tableName) {
 		return "TRUNCATE TABLE "+quoteIdentifier(tableName);
 	}

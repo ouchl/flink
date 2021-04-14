@@ -122,7 +122,11 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		.intType()
 		.defaultValue(3)
 		.withDescription("the max retry times if writing records to database failed.");
-
+	private static final ConfigOption<Boolean> SINK_IGNORE_DELETE = ConfigOptions
+		.key("sink.ignore.delete")
+		.booleanType()
+		.defaultValue(false)
+		.withDescription("if ignore delete operation.");
 	@Override
 	public DynamicTableSink createDynamicTableSink(Context context) {
 		final FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
@@ -184,6 +188,7 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		builder.withBatchSize(config.get(SINK_BUFFER_FLUSH_MAX_ROWS));
 		builder.withBatchIntervalMs(config.get(SINK_BUFFER_FLUSH_INTERVAL).toMillis());
 		builder.withMaxRetries(config.get(SINK_MAX_RETRIES));
+		builder.withIgnoreDelete(config.get(SINK_IGNORE_DELETE));
 		return builder.build();
 	}
 
@@ -227,6 +232,7 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		optionalOptions.add(SINK_BUFFER_FLUSH_MAX_ROWS);
 		optionalOptions.add(SINK_BUFFER_FLUSH_INTERVAL);
 		optionalOptions.add(SINK_MAX_RETRIES);
+		optionalOptions.add(SINK_IGNORE_DELETE);
 		return optionalOptions;
 	}
 
