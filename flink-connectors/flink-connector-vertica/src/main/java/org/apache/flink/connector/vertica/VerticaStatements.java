@@ -58,9 +58,9 @@ public class VerticaStatements {
 			+ "("+ insertColumns +") VALUES ("+valuesClause+")";
 	}
 	public static String getDeleteStatement(String tableName, String tempTable, String[] pkFields) {
-		String whereClause = "WHERE "+Arrays.stream(pkFields).map(f -> "t."+f+"="+"tmp."+f).collect(
+		String whereClause = "WHERE "+Arrays.stream(pkFields).map(f -> f+"="+"tmp."+f).collect(
 			Collectors.joining(" AND "));
-		return "DELETE FROM "+quoteIdentifier(tableName)+ " t WHERE EXISTS (SELECT 1 FROM "+quoteIdentifier(tempTable)+" tmp "
+		return "DELETE FROM "+quoteIdentifier(tableName)+ " WHERE EXISTS (SELECT 1 FROM "+quoteIdentifier(tempTable)+" tmp "
 			+ whereClause+ ")";
 	}
 	public static String getTruncateStatement(String tableName) {
