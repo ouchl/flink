@@ -1,6 +1,8 @@
 package org.apache.flink.connector.vertica;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -67,7 +69,16 @@ public class VerticaStatements {
 		return "TRUNCATE TABLE "+quoteIdentifier(tableName);
 	}
 
-	public static String getCreateTempTableStatement(String tableName, String tempTable) {
+	public static String getCreateTempTableStatement1(String tableName, String tempTable, String[] fieldNames) {
+//		return "CREATE LOCAL TEMPORARY TABLE IF NOT EXISTS "+quoteIdentifier(tempTable)+
+//			" ON COMMIT PRESERVE ROWS AS SELECT * FROM "+quoteIdentifier(tableName)+" WHERE 1=0";
+		String fieldClause = Arrays.stream(fieldNames).map(VerticaStatements::quoteIdentifier).collect(
+			Collectors.joining(", "));
+		return "CREATE TABLE IF NOT EXISTS "+quoteIdentifier(tempTable)+
+			" AS SELECT "+fieldClause+" FROM "+quoteIdentifier(tableName)+" WHERE FALSE";
+	}
+
+	public static String getCreateTempTableStatement2(String tableName, String tempTable) {
 		return "CREATE LOCAL TEMPORARY TABLE IF NOT EXISTS "+quoteIdentifier(tempTable)+
 			" ON COMMIT PRESERVE ROWS AS SELECT * FROM "+quoteIdentifier(tableName)+" WHERE 1=0";
 	}

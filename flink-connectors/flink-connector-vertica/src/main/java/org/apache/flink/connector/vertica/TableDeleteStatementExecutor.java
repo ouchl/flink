@@ -52,7 +52,7 @@ public final class TableDeleteStatementExecutor implements VerticaBatchStatement
 	@Override
 	public void prepareStatements(Connection connection) throws SQLException {
 		st = connection.createStatement();
-		st.execute(VerticaStatements.getCreateTempTableStatement(tableName, tempTableName));
+		st.execute(VerticaStatements.getCreateTempTableStatement2(tableName, tempTableName));
 		insertStatement = FieldNamedPreparedStatement.prepareStatement(connection, VerticaStatements.getInsertIntoStatement(tempTableName, pkNames), pkNames);
 	}
 
