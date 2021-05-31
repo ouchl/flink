@@ -149,7 +149,7 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
             case INTEGER:
                 return val -> val;
             case BIGINT:
-                return val -> val;
+                return val -> val instanceof BigInteger ? ((BigInteger) val).longValue() : val;
             case DECIMAL:
                 final int precision = ((DecimalType) type).getPrecision();
                 final int scale = ((DecimalType) type).getScale();
