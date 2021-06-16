@@ -19,7 +19,6 @@
 package org.apache.flink.connector.vertica;
 
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
-import org.apache.flink.connector.jdbc.statement.StatementFactory;
 import org.apache.flink.table.data.RowData;
 
 import java.sql.Connection;
@@ -33,10 +32,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
-import org.apache.commons.lang3.StringUtils;
 
 
-public final class TableMergeStatementExecutor implements VerticaBatchStatementExecutor<RowData> {
+public final class TableReplicationExecutor implements VerticaBatchStatementExecutor<RowData> {
 
 	private final VerticaDmlOptions dmlOptions;
 	private final VerticaRowConverter converter;
@@ -52,7 +50,7 @@ public final class TableMergeStatementExecutor implements VerticaBatchStatementE
 	/**
 	 * Keep in mind object reuse: if it's on then key extractor may be required to return new object.
 	 */
-	public TableMergeStatementExecutor(VerticaDmlOptions dmlOptions, VerticaRowConverter converter) {
+	public TableReplicationExecutor(VerticaDmlOptions dmlOptions, VerticaRowConverter converter) {
 		this.dmlOptions = checkNotNull(dmlOptions);
 		this.converter = checkNotNull(converter);
 		this.tableName = checkNotNull(dmlOptions.getTableName());
@@ -90,8 +88,9 @@ public final class TableMergeStatementExecutor implements VerticaBatchStatementE
 //			};
 //		}
 //		st.execute("CREATE LOCAL TEMPORARY TABLE IF NOT EXISTS "+tableName+"_temp AS SELECT * FROM "+tableName+" WHERE 1=0");
-		st.execute("DROP TABLE IF EXISTS "+tempTableName+" CASCADE");
 		st.execute(VerticaStatements.getCreateTempTableStatement1(tableName, tempTableName, fieldNames));
+//		st.execute("DROP TABLE IF EXISTS "+tempTableName+" CASCADE");
+		st.execute("TRUNCATE TABLE "+tempTableName);
 		ResultSet rs2 = st.executeQuery("select 1 from views where table_name='"+tempView+"' and lower(table_schema)='"+schema.toLowerCase()+"'");
 		if (!rs2.next()){
 			st.execute("create view "+tempView+" as select * from "+tempTableName);

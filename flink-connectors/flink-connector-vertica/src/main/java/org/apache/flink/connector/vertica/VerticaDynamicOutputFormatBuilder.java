@@ -21,8 +21,6 @@ package org.apache.flink.connector.vertica;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -32,7 +30,6 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.Function;
 
 import static org.apache.flink.table.data.RowData.createFieldGetter;
@@ -91,7 +88,7 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 			return new VerticaBatchingOutputFormat<>(
 				new VerticaConnectionProvider(verticaOptions),
 				executionOptions,
-				ctx -> createBufferReduceExecutor(dmlOptions, ctx, rowDataTypeInformation, logicalTypes, executionOptions.getIgnoreDelete()),
+				ctx -> createBufferReduceExecutor(dmlOptions, executionOptions, ctx, rowDataTypeInformation, logicalTypes, executionOptions.getIgnoreDelete()),
 				VerticaBatchingOutputFormat.RecordExtractor.identity());
 		} else {
 			// append only query
@@ -111,6 +108,7 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 
 	private static VerticaBufferedBatchStatementExecutor<RowData> createBufferReduceExecutor(
 			VerticaDmlOptions opt,
+			VerticaExecutionOptions executionOptions,
 			RuntimeContext ctx,
 			TypeInformation<RowData> rowDataTypeInfo,
 			LogicalType[] fieldTypes,
@@ -124,7 +122,7 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 		final Function<RowData, RowData> valueTransform = ctx.getExecutionConfig().isObjectReuseEnabled() ? typeSerializer::copy : Function.identity();
 
 		return new TableBufferReducedStatementExecutor(
-			createMergeExecutor(opt, fieldTypes),
+			createMergeExecutor(opt, executionOptions, fieldTypes),
 			createDeleteExecutor(opt, pkTypes),
 			createRowKeyExtractor(fieldTypes, pkFields),
 			valueTransform,
@@ -146,12 +144,22 @@ public class VerticaDynamicOutputFormatBuilder implements Serializable {
 
 	private static VerticaBatchStatementExecutor<RowData> createMergeExecutor(
 		VerticaDmlOptions dmlOptions,
+		VerticaExecutionOptions executionOptions,
 		LogicalType[] fieldTypes) {
 		final VerticaRowConverter rowConverter = new VerticaRowConverter(RowType.of(fieldTypes));
-		return new TableMergeStatementExecutor(
-			dmlOptions,
-			rowConverter
-		);
+		VerticaBatchStatementExecutor<RowData> executor = null;
+		if (executionOptions.getExecutor().equals("merge")){
+			executor = new TableMergeExecutor(
+				dmlOptions,
+				rowConverter
+			);
+		}else if (executionOptions.getExecutor().equals("replicator")) {
+			executor = new TableReplicationExecutor(
+				dmlOptions,
+				rowConverter
+			);
+		}
+		return executor;
 	}
 
 	private static VerticaBatchStatementExecutor<RowData> createSimpleRowExecutor(

@@ -127,6 +127,11 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		.booleanType()
 		.defaultValue(false)
 		.withDescription("if ignore delete operation.");
+	private static final ConfigOption<String> SINK_EXECUTOR = ConfigOptions
+		.key("sink.executor")
+		.stringType()
+		.defaultValue("merge")
+		.withDescription("statement executor.");
 	@Override
 	public DynamicTableSink createDynamicTableSink(Context context) {
 		final FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
@@ -189,6 +194,7 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		builder.withBatchIntervalMs(config.get(SINK_BUFFER_FLUSH_INTERVAL).toMillis());
 		builder.withMaxRetries(config.get(SINK_MAX_RETRIES));
 		builder.withIgnoreDelete(config.get(SINK_IGNORE_DELETE));
+		builder.withExecutor(config.get(SINK_EXECUTOR));
 		return builder.build();
 	}
 
@@ -233,6 +239,7 @@ public class VerticaDynamicTableFactory implements DynamicTableSourceFactory, Dy
 		optionalOptions.add(SINK_BUFFER_FLUSH_INTERVAL);
 		optionalOptions.add(SINK_MAX_RETRIES);
 		optionalOptions.add(SINK_IGNORE_DELETE);
+		optionalOptions.add(SINK_EXECUTOR);
 		return optionalOptions;
 	}
 
